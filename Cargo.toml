@@ -1,0 +1,8 @@
+[package]
+name = "bevy_trench_test"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "0.18.0", features= ["free_camera"]}
+bevy_trenchbroom = "0.12.0"
