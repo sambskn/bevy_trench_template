@@ -1,20 +1,34 @@
 use bevy::{
     camera_controller::free_camera::{FreeCamera, FreeCameraPlugin},
+    ecs::{lifecycle::HookContext, world::DeferredWorld},
     prelude::*,
 };
 use bevy_trenchbroom::prelude::*;
 
-// define some classes for trenchbroom to pick up
 #[point_class(
     model({ path: "models/player.png", scale: 0.5 }),
 )]
+#[component(on_add = Self::on_add)]
 #[derive(Default)]
-struct PlayerStart;
-
-#[point_class]
-#[derive(Default)]
-struct Enemy {
-    pub health: i32,
+struct NPCSprite;
+impl NPCSprite {
+    pub fn on_add(mut world: DeferredWorld, ctx: HookContext) {
+        let Some(asset_server) = world.get_resource::<AssetServer>() else {
+            return;
+        };
+        let rect_mesh = asset_server.add(Mesh::from(Rectangle::new(0.5, 0.5)));
+        let material = asset_server.add(StandardMaterial {
+            base_color_texture: Some(asset_server.load("models/player.png")),
+            perceptual_roughness: 1.0,
+            alpha_mode: AlphaMode::Mask(1.0),
+            cull_mode: None,
+            ..default()
+        });
+        world
+            .commands()
+            .entity(ctx.entity)
+            .insert((Mesh3d(rect_mesh), MeshMaterial3d(material)));
+    }
 }
 
 fn main() {
@@ -28,7 +42,7 @@ fn main() {
             )
             .build(),
         )
-        .add_plugins((CameraPlugin, TrenchLoaderPlugin))
+        .add_plugins((CameraPlugin, TrenchLoaderPlugin, BillboardSpritePlugin))
         .run();
 }
 
@@ -66,5 +80,29 @@ impl Plugin for TrenchLoaderPlugin {
 }
 
 fn spawn_test_map(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(SceneRoot(asset_server.load("maps/test.map#Scene")));
+    commands.spawn(SceneRoot(asset_server.load("maps/test2.map#Scene")));
+}
+
+// Plugin for keeping billboard sprites facing the camera
+struct BillboardSpritePlugin;
+impl Plugin for BillboardSpritePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, update_billboards);
+    }
+}
+
+fn update_billboards(
+    camera_query: Query<&Transform, (With<Camera3d>, Without<NPCSprite>)>,
+    mut sprite_query: Query<&mut Transform, (With<NPCSprite>, Without<Camera3d>)>,
+) {
+    // TODO: make it update the transform of all the sprites to face the camera
+    let cam_res = camera_query.single();
+    if cam_res.is_err() {
+        return;
+    }
+    let cam = cam_res.unwrap();
+
+    for mut sprite_tf in &mut sprite_query {
+        sprite_tf.look_to(cam.translation, Vec3::Y);
+    }
 }
