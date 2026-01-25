@@ -1473,7 +1473,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_trench_test"
+name = "bevy_trench_template"
 version = "0.1.0"
 dependencies = [
  "bevy",

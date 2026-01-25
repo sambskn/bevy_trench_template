@@ -41,7 +41,7 @@ fn main() {
         .add_plugins(FreeCameraPlugin)
         .add_plugins(
             TrenchBroomPlugins(
-                TrenchBroomConfig::new("bevy_trench_test")
+                TrenchBroomConfig::new("bevy_trench_template")
                     .default_solid_scene_hooks(|| SceneHooks::new().smooth_by_default_angle()),
             )
             .build(),

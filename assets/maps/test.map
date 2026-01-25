@@ -98,21 +98,21 @@
 }
 // entity 1
 {
-"classname" "light_point"
-"origin" "120 -152 232"
+"classname" "npc_sprite"
+"origin" "8 -88 8"
 }
 // entity 2
 {
 "classname" "light_point"
-"origin" "-72 -56 232"
+"origin" "72 -136 152"
 }
 // entity 3
 {
 "classname" "light_point"
-"origin" "-56 -40 152"
+"origin" "-72 -56 136"
 }
 // entity 4
 {
-"classname" "npc_sprite"
-"origin" "8 -88 8"
+"classname" "light_point"
+"origin" "8 -56 72"
 }
