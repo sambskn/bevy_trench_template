@@ -5,8 +5,12 @@ use bevy::{
 };
 use bevy_trenchbroom::prelude::*;
 
+// point_class marks it for bevy_trenchbroom
+// - adding a model path is for display in trenchbroom, not pulled for bevy side atm
+// component is the bevy macro used to set up the hook for spawning our billboarded sprite
+// (calling the on_add fn below)
 #[point_class(
-    model({ path: "models/player.png", scale: 0.5 }),
+    model({ path: "sprites/rat.png", scale: 0.5 }),
 )]
 #[component(on_add = Self::on_add)]
 #[derive(Default)]
@@ -16,9 +20,9 @@ impl NPCSprite {
         let Some(asset_server) = world.get_resource::<AssetServer>() else {
             return;
         };
-        let rect_mesh = asset_server.add(Mesh::from(Rectangle::new(0.5, 0.5)));
+        let rect_mesh = asset_server.add(Mesh::from(Rectangle::new(0.42, 0.42)));
         let material = asset_server.add(StandardMaterial {
-            base_color_texture: Some(asset_server.load("models/player.png")),
+            base_color_texture: Some(asset_server.load("sprites/rat.png")),
             perceptual_roughness: 1.0,
             alpha_mode: AlphaMode::Mask(1.0),
             cull_mode: None,
@@ -33,7 +37,7 @@ impl NPCSprite {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins(FreeCameraPlugin)
         .add_plugins(
             TrenchBroomPlugins(
@@ -55,12 +59,10 @@ impl Plugin for CameraPlugin {
 }
 
 fn spawn_camera(mut commands: Commands) {
+    // currently a debug camera
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(-2.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        // This component stores all camera settings and state, which is used by the FreeCameraPlugin to
-        // control it. These properties can be changed at runtime, but beware the controller system is
-        // constantly using and modifying those values unless the enabled field is false.
         FreeCamera {
             sensitivity: 0.2,
             friction: 25.0,
@@ -80,7 +82,7 @@ impl Plugin for TrenchLoaderPlugin {
 }
 
 fn spawn_test_map(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(SceneRoot(asset_server.load("maps/test2.map#Scene")));
+    commands.spawn(SceneRoot(asset_server.load("maps/test.map#Scene")));
 }
 
 // Plugin for keeping billboard sprites facing the camera
@@ -95,14 +97,10 @@ fn update_billboards(
     camera_query: Query<&Transform, (With<Camera3d>, Without<NPCSprite>)>,
     mut sprite_query: Query<&mut Transform, (With<NPCSprite>, Without<Camera3d>)>,
 ) {
-    // TODO: make it update the transform of all the sprites to face the camera
-    let cam_res = camera_query.single();
-    if cam_res.is_err() {
+    let Ok(cam_tf) = camera_query.single() else {
         return;
-    }
-    let cam = cam_res.unwrap();
-
+    };
     for mut sprite_tf in &mut sprite_query {
-        sprite_tf.look_to(cam.translation, Vec3::Y);
+        sprite_tf.look_to(cam_tf.translation, Vec3::Y);
     }
 }
