@@ -59,7 +59,7 @@ impl Plugin for CameraPlugin {
 }
 
 fn spawn_camera(mut commands: Commands) {
-    // currently a debug camera
+    // currently a debug camera (wow what a cool new bevy 0.18 addition!)
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(-2.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -101,6 +101,7 @@ fn update_billboards(
         return;
     };
     for mut sprite_tf in &mut sprite_query {
+        // TODO: figure out why this sucks so hard?
         sprite_tf.look_to(cam_tf.translation, Vec3::Y);
     }
 }
