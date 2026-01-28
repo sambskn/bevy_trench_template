@@ -1,5 +1,6 @@
 # bevy_trench_template
 <img width="1282" height="752" alt="trench_temp" src="https://github.com/user-attachments/assets/cc781751-6ad8-4e8e-a837-0ffbc2364850" />
+
 Simple [bevy](https://github.com/bevyengine/bevy) project showcasing usage of the [bevy_trenchbroom](https://github.com/Noxmore/bevy_trenchbroom) crate to make a simple 3d level with some sprites and what not.
 
 There's some sample sprites (ok, *a* sample sprite) and textures in here too, go crazy with em.
