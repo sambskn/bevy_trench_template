@@ -30,6 +30,7 @@ Under the hood bevy_trenchbroom is using all the structs you've tagged with thei
     - It's built in with bevy_trenchbroom but I can't figure out how to change the direction of the light. Prefer point lights for now.
 - Make sure this all works for a WASM build, and/or implement nice to have build helpers from other Bevy templates
 - Add some physics stuff to the example
+  - (working on this on the `physics` branch fwiw, not working yet lol) 
 - Uhhh why do the sprites be rotating weird....
 
 ## Contributing
