@@ -1,9 +1,12 @@
+use avian3d::{math::*, prelude::*};
 use bevy::{
-    camera_controller::free_camera::{FreeCamera, FreeCameraPlugin},
     ecs::{lifecycle::HookContext, world::DeferredWorld},
+    input::{common_conditions::input_just_pressed, mouse::AccumulatedMouseMotion},
     prelude::*,
+    window::{CursorGrabMode, CursorOptions},
 };
 use bevy_trenchbroom::prelude::*;
+use bevy_trenchbroom_avian::AvianPhysicsBackend;
 
 // point_class marks it for bevy_trenchbroom
 // - adding a model path is for display in trenchbroom, not pulled for bevy side atm
@@ -38,7 +41,6 @@ impl NPCSprite {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugins(FreeCameraPlugin)
         .add_plugins(
             TrenchBroomPlugins(
                 TrenchBroomConfig::new("bevy_trench_template")
@@ -46,6 +48,10 @@ fn main() {
             )
             .build(),
         )
+        .add_plugins((
+            PhysicsPlugins::default(),
+            TrenchBroomPhysicsPlugin::new(AvianPhysicsBackend),
+        ))
         .add_plugins((CameraPlugin, TrenchLoaderPlugin, BillboardSpritePlugin))
         .run();
 }
@@ -54,23 +60,126 @@ fn main() {
 struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_camera);
+        app.add_systems(Startup, spawn_camera)
+            .add_systems(FixedUpdate, player_camera_movement)
+            .add_systems(
+                Update,
+                (
+                    update_camera_transform,
+                    capture_cursor.run_if(input_just_pressed(MouseButton::Left)),
+                    release_cursor.run_if(input_just_pressed(KeyCode::Escape)),
+                ),
+            );
     }
 }
 
+#[derive(Component)]
+struct PlayerCamera;
+
 fn spawn_camera(mut commands: Commands) {
-    // currently a debug camera (wow what a cool new bevy 0.18 addition!)
     commands.spawn((
+        PlayerCamera,
         Camera3d::default(),
-        Transform::from_xyz(-2.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        FreeCamera {
-            sensitivity: 0.2,
-            friction: 25.0,
-            walk_speed: 3.0,
-            run_speed: 9.0,
-            ..default()
-        },
+        RigidBody::Kinematic,
+        Collider::cuboid(0.5, 0.5, 0.5),
+        TransformInterpolation,
+        CollidingEntities::default(),
     ));
+}
+
+const PLAYER_SPEED: f32 = 7.0;
+const PLAYER_SPRINT_BOOST: f32 = 3.0;
+const PLAYER_SLOWDOWN_MULT: f32 = 20.0;
+
+fn player_camera_movement(
+    mut query: Query<&mut LinearVelocity, With<PlayerCamera>>,
+    camera: Single<&Transform, With<Camera>>,
+    time: Res<Time>,
+    input: Res<ButtonInput<KeyCode>>,
+) {
+    for mut lin_vel in &mut query {
+        // build movement vec from current inputs
+        let mut movement_vel = Vec3::ZERO;
+        if input.pressed(KeyCode::KeyW) {
+            movement_vel += Vec3::NEG_Z
+        }
+        if input.pressed(KeyCode::KeyS) {
+            movement_vel += Vec3::Z
+        }
+        if input.pressed(KeyCode::KeyA) {
+            movement_vel += Vec3::NEG_X
+        }
+        if input.pressed(KeyCode::KeyD) {
+            movement_vel += Vec3::X
+        }
+        if input.pressed(KeyCode::Space) || input.pressed(KeyCode::KeyE) {
+            movement_vel += Vec3::Y
+        }
+        if input.pressed(KeyCode::ControlLeft) || input.pressed(KeyCode::KeyQ) {
+            movement_vel += Vec3::NEG_Y
+        }
+        movement_vel = movement_vel.normalize_or_zero();
+        movement_vel *= PLAYER_SPEED;
+        if input.pressed(KeyCode::ShiftLeft) {
+            movement_vel *= PLAYER_SPRINT_BOOST;
+        }
+        movement_vel = camera.rotation * movement_vel;
+
+        // Add to current velocity
+        lin_vel.0 += movement_vel.adjust_precision();
+
+        let current_speed = lin_vel.length();
+        if current_speed > 0.0 {
+            // Apply friction
+            lin_vel.0 = lin_vel.0 / current_speed
+                * (current_speed
+                    - current_speed * PLAYER_SLOWDOWN_MULT * time.delta_secs().adjust_precision())
+                .max(0.0)
+        }
+    }
+}
+
+fn update_camera_transform(
+    accumulated_mouse_motion: Res<AccumulatedMouseMotion>,
+    player: Single<(Entity, &Transform), With<PlayerCamera>>,
+    mut camera: Single<&mut Transform, With<Camera>>,
+    spatial: Res<SpatialQueryPipeline>,
+) {
+    let (player_entity, player_transform) = player.into_inner();
+    let delta = accumulated_mouse_motion.delta;
+
+    let delta_yaw = -delta.x * 0.005;
+    let delta_pitch = -delta.y * 0.005;
+
+    let (yaw, pitch, roll) = camera.rotation.to_euler(EulerRot::YXZ);
+    let yaw = yaw + delta_yaw;
+
+    const PITCH_LIMIT: f32 = FRAC_PI_2 - 0.01;
+    let pitch = (pitch + delta_pitch).clamp(-PITCH_LIMIT, PITCH_LIMIT);
+
+    camera.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, roll);
+    const MAX_DISTANCE: f32 = 15.0;
+    camera.translation = player_transform.translation + camera.back() * MAX_DISTANCE;
+    if let Some(hit) = spatial.cast_ray(
+        player_transform.translation.adjust_precision(),
+        camera.back(),
+        MAX_DISTANCE.adjust_precision(),
+        true,
+        &SpatialQueryFilter::from_excluded_entities([player_entity]),
+    ) {
+        camera.translation = player_transform.translation
+            + camera.back() * (hit.distance.val_num_f32() - 1.0).max(0.0);
+    }
+}
+
+fn capture_cursor(mut cursor: Single<&mut CursorOptions>) {
+    cursor.visible = false;
+    cursor.grab_mode = CursorGrabMode::Locked;
+}
+
+fn release_cursor(mut cursor: Single<&mut CursorOptions>) {
+    cursor.visible = true;
+    cursor.grab_mode = CursorGrabMode::None;
 }
 
 // Plugin that loads trenchbroom map
