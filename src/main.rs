@@ -76,6 +76,9 @@ impl Plugin for CameraPlugin {
                     release_cursor.run_if(input_just_pressed(KeyCode::Escape)),
                 ),
             );
+
+        // Print info message with control info to console
+        info!("\n\n\nControls:\n\tWASD => move, Mouse => look, Space => 'jump'\n\n");
     }
 }
 
