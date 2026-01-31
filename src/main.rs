@@ -41,17 +41,21 @@ impl NPCSprite {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugins(
-            TrenchBroomPlugins(
-                TrenchBroomConfig::new("bevy_trench_template")
-                    .default_solid_scene_hooks(|| SceneHooks::new().smooth_by_default_angle()),
-            )
-            .build(),
-        )
         .add_plugins((
             PhysicsPlugins::default(),
             TrenchBroomPhysicsPlugin::new(AvianPhysicsBackend),
         ))
+        .insert_resource(Gravity(Vec3::NEG_Y * 20.0))
+        .add_plugins(
+            TrenchBroomPlugins(
+                TrenchBroomConfig::new("bevy_trench_template").default_solid_scene_hooks(|| {
+                    SceneHooks::new()
+                        .smooth_by_default_angle()
+                        .convex_collider()
+                }),
+            )
+            .build(),
+        )
         .add_plugins((CameraPlugin, TrenchLoaderPlugin, BillboardSpritePlugin))
         .run();
 }
@@ -66,10 +70,22 @@ impl Plugin for CameraPlugin {
                 Update,
                 (
                     update_camera_transform,
+                    debug_physics,
                     capture_cursor.run_if(input_just_pressed(MouseButton::Left)),
                     release_cursor.run_if(input_just_pressed(KeyCode::Escape)),
                 ),
             );
+    }
+}
+
+fn debug_physics(colliders: Query<(Entity, &Collider, Option<&RigidBody>)>) {
+    let count = colliders.iter().count();
+    if count > 0 {
+        info!("=== Physics Debug ===");
+        info!("Total colliders: {}", count);
+        for (entity, _collider, rb) in colliders.iter().take(5) {
+            info!("  Entity {:?}, RigidBody: {:?}", entity, rb);
+        }
     }
 }
 
@@ -80,10 +96,12 @@ fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         PlayerCamera,
         Camera3d::default(),
-        RigidBody::Kinematic,
+        Transform::from_xyz(0.0, 5.0, 0.0),
+        RigidBody::Dynamic,
         Collider::cuboid(0.5, 0.5, 0.5),
         TransformInterpolation,
         CollidingEntities::default(),
+        LockedAxes::ROTATION_LOCKED,
     ));
 }
 
@@ -92,12 +110,11 @@ const PLAYER_SPRINT_BOOST: f32 = 3.0;
 const PLAYER_SLOWDOWN_MULT: f32 = 20.0;
 
 fn player_camera_movement(
-    mut query: Query<&mut LinearVelocity, With<PlayerCamera>>,
-    camera: Single<&Transform, With<Camera>>,
+    mut query: Query<(&mut LinearVelocity, &Transform), With<PlayerCamera>>,
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
 ) {
-    for mut lin_vel in &mut query {
+    for (mut lin_vel, camera) in &mut query {
         // build movement vec from current inputs
         let mut movement_vel = Vec3::ZERO;
         if input.pressed(KeyCode::KeyW) {
@@ -141,35 +158,23 @@ fn player_camera_movement(
 
 fn update_camera_transform(
     accumulated_mouse_motion: Res<AccumulatedMouseMotion>,
-    player: Single<(Entity, &Transform), With<PlayerCamera>>,
-    mut camera: Single<&mut Transform, With<Camera>>,
-    spatial: Res<SpatialQueryPipeline>,
+    mut camera: Query<&mut Transform, With<PlayerCamera>>,
 ) {
-    let (player_entity, player_transform) = player.into_inner();
+    let Ok(mut transform) = camera.single_mut() else {
+        return;
+    };
+
     let delta = accumulated_mouse_motion.delta;
+    let delta_yaw = -delta.x * 0.003;
+    let delta_pitch = -delta.y * 0.003;
 
-    let delta_yaw = -delta.x * 0.005;
-    let delta_pitch = -delta.y * 0.005;
-
-    let (yaw, pitch, roll) = camera.rotation.to_euler(EulerRot::YXZ);
+    let (yaw, pitch, roll) = transform.rotation.to_euler(EulerRot::YXZ);
     let yaw = yaw + delta_yaw;
 
     const PITCH_LIMIT: f32 = FRAC_PI_2 - 0.01;
     let pitch = (pitch + delta_pitch).clamp(-PITCH_LIMIT, PITCH_LIMIT);
 
-    camera.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, roll);
-    const MAX_DISTANCE: f32 = 15.0;
-    camera.translation = player_transform.translation + camera.back() * MAX_DISTANCE;
-    if let Some(hit) = spatial.cast_ray(
-        player_transform.translation.adjust_precision(),
-        camera.back(),
-        MAX_DISTANCE.adjust_precision(),
-        true,
-        &SpatialQueryFilter::from_excluded_entities([player_entity]),
-    ) {
-        camera.translation = player_transform.translation
-            + camera.back() * (hit.distance.val_num_f32() - 1.0).max(0.0);
-    }
+    transform.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, roll);
 }
 
 fn capture_cursor(mut cursor: Single<&mut CursorOptions>) {
