@@ -38,6 +38,8 @@ impl NPCSprite {
     }
 }
 
+const GRAVITY_MULT: f32 = 160.0;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
@@ -45,7 +47,7 @@ fn main() {
             PhysicsPlugins::default(),
             TrenchBroomPhysicsPlugin::new(AvianPhysicsBackend),
         ))
-        .insert_resource(Gravity(Vec3::NEG_Y * 20.0))
+        .insert_resource(Gravity(Vec3::NEG_Y * GRAVITY_MULT))
         .add_plugins(
             TrenchBroomPlugins(
                 TrenchBroomConfig::new("bevy_trench_template").default_solid_scene_hooks(|| {
@@ -70,22 +72,10 @@ impl Plugin for CameraPlugin {
                 Update,
                 (
                     update_camera_transform,
-                    debug_physics,
                     capture_cursor.run_if(input_just_pressed(MouseButton::Left)),
                     release_cursor.run_if(input_just_pressed(KeyCode::Escape)),
                 ),
             );
-    }
-}
-
-fn debug_physics(colliders: Query<(Entity, &Collider, Option<&RigidBody>)>) {
-    let count = colliders.iter().count();
-    if count > 0 {
-        info!("=== Physics Debug ===");
-        info!("Total colliders: {}", count);
-        for (entity, _collider, rb) in colliders.iter().take(5) {
-            info!("  Entity {:?}, RigidBody: {:?}", entity, rb);
-        }
     }
 }
 
