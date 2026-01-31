@@ -1544,6 +1544,7 @@ dependencies = [
  "bevy",
  "bevy_trenchbroom",
  "bevy_trenchbroom_avian",
+ "log",
 ]
 
 [[package]]

@@ -3,7 +3,31 @@ name = "bevy_trench_template"
 version = "0.1.0"
 edition = "2024"
 
+# Enable a small amount of optimization in the dev profile.
+[profile.dev]
+opt-level = 1
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+# make small (s sometimes better fwiw)
+opt-level = "z"
+# Compile the entire crate as one unit.
+# Slows compile times, marginal improvements.
+codegen-units = 1
+# Do a second optimization pass over the entire program, including dependencies.
+# Slows compile times, marginal improvements.
+lto = true
+# Strip all debugging information from the binary to slightly reduce file size.
+strip = "debuginfo"
+
 [dependencies]
+log = { version = "*", features = [
+    "max_level_debug",
+    "release_max_level_warn",
+] }
 avian3d = { version = "0.5.0", features = [
     "3d",
     "default-collider",

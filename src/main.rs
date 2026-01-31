@@ -42,7 +42,19 @@ const GRAVITY_MULT: f32 = 160.0;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins(
+            DefaultPlugins
+                .set(ImagePlugin::default_nearest()) // show pixels
+                .set(WindowPlugin {
+                    // setup window
+                    primary_window: Window {
+                        fit_canvas_to_parent: true, // make it fill on web
+                        ..default()
+                    }
+                    .into(),
+                    ..default()
+                }),
+        )
         .add_plugins((
             PhysicsPlugins::default(),
             TrenchBroomPhysicsPlugin::new(AvianPhysicsBackend),
