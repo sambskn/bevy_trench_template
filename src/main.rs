@@ -79,7 +79,7 @@ struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_camera)
-            .add_systems(FixedUpdate, player_camera_movement)
+            .add_systems(FixedUpdate, (player_camera_movement, debug_comamnds))
             .add_systems(
                 Update,
                 (
@@ -97,11 +97,13 @@ impl Plugin for CameraPlugin {
 #[derive(Component)]
 struct PlayerCamera;
 
+const PLAYER_START_LOC: Transform = Transform::from_xyz(0., 10., 5.);
+
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         PlayerCamera,
         Camera3d::default(),
-        Transform::from_xyz(0.0, 5.0, 0.0),
+        PLAYER_START_LOC.clone(),
         RigidBody::Dynamic,
         Collider::cuboid(0.5, 0.5, 0.5),
         TransformInterpolation,
@@ -157,6 +159,18 @@ fn player_camera_movement(
                 * (current_speed
                     - current_speed * PLAYER_SLOWDOWN_MULT * time.delta_secs().adjust_precision())
                 .max(0.0)
+        }
+    }
+}
+
+fn debug_comamnds(
+    mut player_tf_query: Query<&mut Transform, With<PlayerCamera>>,
+    input: Res<ButtonInput<KeyCode>>,
+) {
+    for mut player_tf in &mut player_tf_query {
+        // reset player location to start transfrom
+        if input.pressed(KeyCode::KeyR) {
+            player_tf.translation = PLAYER_START_LOC.translation;
         }
     }
 }
