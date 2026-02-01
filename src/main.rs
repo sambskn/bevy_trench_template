@@ -212,6 +212,8 @@ impl Plugin for BillboardSpritePlugin {
     }
 }
 
+const SPRITE_ROTATE_THRESHOLD: f32 = 0.0001;
+
 fn update_billboards(
     camera_query: Query<&Transform, (With<Camera3d>, Without<NPCSprite>)>,
     mut sprite_query: Query<&mut Transform, (With<NPCSprite>, Without<Camera3d>)>,
@@ -220,7 +222,13 @@ fn update_billboards(
         return;
     };
     for mut sprite_tf in &mut sprite_query {
-        // TODO: figure out why this sucks so hard?
-        sprite_tf.look_to(cam_tf.translation, Vec3::Y);
+        // check diff between current sprite rotation and target
+        let current_sprite_rotation = sprite_tf.rotation.clone();
+        let target_tf = cam_tf.clone();
+        let target_tf_rotation = target_tf.rotation;
+        let diff = target_tf_rotation.angle_between(current_sprite_rotation);
+        if diff > SPRITE_ROTATE_THRESHOLD {
+            sprite_tf.rotation = target_tf.rotation;
+        }
     }
 }
