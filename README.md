@@ -13,11 +13,18 @@ There's some sample sprites (ok, *a* sample sprite) and textures in here too, go
 ## Pre-reqs
 - [Trenchbroom](https://github.com/TrenchBroom/TrenchBroom/releases)
 - Rust (i assume you got this if you're here)
+- [Butler](https://itch.io/docs/butler/) for deploying to itch
+- [Just](https://just.systems/man/en/) for runnin' stuff
 
 ## Usage
-- Do a `cargo run` at least once to populate Trenchbroom's config files with the latest macro-defined stuff from your code
+- Do a `cargo run` (or a `just`) at least once to populate Trenchbroom's config files with the latest macro-defined stuff from your code
 - Select your bevy app by name when making a new map in Trenchbroom
 - Load the saved `.map` file in bevy (see current example implementation in `main.rs`)
+
+## Deploying to itch.io
+- WASM
+  - run `just wasm-build wasm-deploy`
+    - after running the first time, edit the itch project and mark this channel 'wasm' as being what gets run in the web
 
 ### Further Context
 Under the hood bevy_trenchbroom is using all the structs you've tagged with their macros to generate the config data for Trenchbroom to use when you're editing in that app, it can be configured to only save that config sometimes, but for this jam template I think it's ok to just leave it as is - but as a result you should be mindful of how in sync your Trenchbroom and your code are. 
