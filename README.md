@@ -35,8 +35,7 @@ Under the hood bevy_trenchbroom is using all the structs you've tagged with thei
 - Add example of 'picking' working (e.g. add a highlight border around sprites within a certain distance in the center of the camera view)
 - Figure out what's up with directional lighting funkiness 
     - It's built in with bevy_trenchbroom but I can't figure out how to change the direction of the light. Prefer point lights for now.
-- Make sure this all works for a WASM build, and/or implement nice to have build helpers from other Bevy templates
-  - This does work now, though the itch.io draft page I tested had a little wack collision, will need to investigate further. 
+- Add justfile commands for other deploy types
 
 ## Contributing
 Sincerely would love to get any feedback from trying out this tool, in the form of issues or pull requests! Would also like to keep gen-AI out of here for now, read my AGENTS.md if you have any questions lol.
