@@ -10,11 +10,17 @@ There's some sample sprites (ok, *a* sample sprite) and textures in here too, go
 - Figuring out the bare minimum to get 3d world + 2d billboard-ed sprites on the bevy end
 - Hopefully supporting the new bevy game jam!
 
-## Pre-reqs
+## Setup
+### Pre-reqs
 - [Trenchbroom](https://github.com/TrenchBroom/TrenchBroom/releases)
 - Rust (i assume you got this if you're here)
 - [Butler](https://itch.io/docs/butler/) for deploying to itch
 - [Just](https://just.systems/man/en/) for runnin' stuff
+
+### Getting Started
+- Make a new itch project, set it to your environment vars (see `.env.example`)
+- Do a project wide Find/Replace for `bevy_trench_template` and replace with your project name
+- Hoepfully everything works? lol
 
 ## Usage
 - Do a `cargo run` (or a `just`) at least once to populate Trenchbroom's config files with the latest macro-defined stuff from your code
