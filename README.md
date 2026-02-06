@@ -27,21 +27,29 @@ There's some sample sprites (ok, *a* sample sprite) and textures in here too, go
 - Select your bevy app by name when making a new map in Trenchbroom
 - Load the saved `.map` file in bevy (see current example implementation in `main.rs`)
 
+### Trenchbroom
+
+- Lights have a bunch of properties you can configure in Trenchbroom's Enitty Key-Value editor
+  - E.g. you can toggle shadow settings/color - and the angle, which I initially missed when tryign to get the DriectionalLight analog to work as I'd expect. Mess around with the light enitty values in Trenchbroom.
+
+
 ## Deploying to itch.io
 - WASM
   - run `just wasm-build wasm-deploy`
     - after running the first time, edit the itch project and mark this channel 'wasm' as being what gets run in the web
+- Other
+  - idk man probably just run `cargo build --release` then copy the binary along with the assets folder and bada bing! you got a game ready to be zipped up
+  - will add commands for that using butler simiar to the ones currently defined in the justfile, but you coul dalso jsut to the step above and uplaod the zip to itch.io manually
+  - just make the web build work bro please, nobody wants to be downlaoding stuff
 
 ### Further Context
 Under the hood bevy_trenchbroom is using all the structs you've tagged with their macros to generate the config data for Trenchbroom to use when you're editing in that app, it can be configured to only save that config sometimes, but for this jam template I think it's ok to just leave it as is - but as a result you should be mindful of how in sync your Trenchbroom and your code are. 
 
 ## TODO/Stretch Goals 
 ### (ideally before the Bevy 0.18 gamejam)
-- Add a CLI command for automatically making a `zoo` map (one instance of every texture/brush/sprite/etc)
 - Add example of 'picking' working (e.g. add a highlight border around sprites within a certain distance in the center of the camera view)
-- Figure out what's up with directional lighting funkiness 
-    - It's built in with bevy_trenchbroom but I can't figure out how to change the direction of the light. Prefer point lights for now.
 - Add justfile commands for other deploy types
+- Add a CLI command for automatically making a `zoo` map (one instance of every texture/brush/sprite/etc)
 
 ## Contributing
 Sincerely would love to get any feedback from trying out this tool, in the form of issues or pull requests! Would also like to keep gen-AI out of here for now, read my AGENTS.md if you have any questions lol.
